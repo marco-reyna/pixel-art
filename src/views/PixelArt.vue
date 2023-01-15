@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue'
 const canvas = ref(null);
 const ctx = ref(null);
 const gridLines = ref(null);
-const toggle = ref(false);
+const toggle = ref(true);
 const gridPixelLength = ref(null);
 const gridSize = ref(8);
 const colorSelected = ref('#009578');
@@ -56,7 +56,7 @@ function paintOnCanvas(e) {
     if (!isFillToolSelected.value) {
       paintCell(cellXStart.value, cellYStart.value);
     } else {
-      runFill(cellXStart.value, cellYStart.value, colorSelected.value);
+      useFillTool(cellXStart.value, cellYStart.value, colorSelected.value);
     }
   }
 }
@@ -79,7 +79,7 @@ function hexToRgb(hex) {
   } : null;
 }
 
-function runFill(startX, startY, currentColor) {
+function useFillTool(startX, startY, currentColor) {
 
   let color = hexToRgb(currentColor)
 
@@ -186,17 +186,15 @@ function clearCanvas() {
   ctx.value.fillRect(0, 0, canvas.value.width, canvas.value.height);
 }
 
+
+const squaresLines = ref([])
+
 function setGridLines() {
   gridLines.value.style.width = `${canvas.value.width}px`;
   gridLines.value.style.height = `${canvas.value.height}px`;
   gridLines.value.style.gridTemplateColumns = `repeat(${gridSize.value}, 1fr)`;
   gridLines.value.style.gridTemplateRows = `repeat(${gridSize.value}, 1fr)`;
-
-  [...Array(gridSize.value ** 2)].forEach(() =>
-    gridLines.value.insertAdjacentHTML(
-      "beforeend", "<div class='child' style='border: 1px solid rgba(0, 0, 0, 0.1);'></div>"
-    )
-  );
+  squaresLines.value = gridSize.value ** 2
 }
 
 function toggleLines() {
@@ -229,7 +227,14 @@ function downloadPixelArt(type) {
       <div 
         ref="gridLines"
         id="gridLines"
-      ></div>
+      >
+      <div 
+        style="border: 1px solid rgba(0, 0, 0, 0.1);"
+        v-for="square in squaresLines"
+        :key="square"
+      >
+      </div>
+      </div>
       <canvas
         ref="canvas"
         width="800"
@@ -288,7 +293,6 @@ function downloadPixelArt(type) {
     </button>
 
   </section>
-
 </template>
 
 <style scoped>
