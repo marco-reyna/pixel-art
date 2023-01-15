@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const canvas = ref(null);
 const ctx = ref(null);
@@ -8,10 +8,18 @@ const toggle = ref(false);
 const gridPixelLength = ref(null);
 const gridSize = ref(8);
 const colorSelected = ref('#009578');
+const selectGridSize = ref([]);
+const isFillToolSelected = ref(false);
 
 onMounted(() => {
   setCanvas()
   setGridLines()
+  selectGridSize.value = [
+    {size: 8, click: () => selectGridSizeButton(8)},
+    {size: 12, click: () => selectGridSizeButton(12)},
+    {size: 16, click: () => selectGridSizeButton(16)},
+    {size: 32, click: () => selectGridSizeButton(32)},
+  ]
 });
 
 function setCanvas() {
@@ -31,12 +39,19 @@ function paintOnCanvas(e) {
   const cellY = Math.floor(y / gridPixelLength.value);
   const currentColor = colorHistory.value[`${cellX}_${cellY}`];
 
+  cellXStart.value = cellX * gridPixelLength.value;
+  cellYStart.value = cellY * gridPixelLength.value;
+
   if (e.ctrlKey) {
     if (currentColor) {
       colorSelected.value = currentColor;
     }
   } else {
-    paintCell(cellX, cellY);
+    if (!isFillToolSelected.value) {
+      paintCell(cellXStart.value, cellYStart.value);
+    } else {
+      runFill(cellXStart.value, cellYStart.value, colorSelected.value);
+    }
   }
 }
 
@@ -44,12 +59,120 @@ const cellXStart = ref(0);
 const cellYStart = ref(0);
 
 function paintCell(x, y) {
-  cellXStart.value = x * gridPixelLength.value
-  cellYStart.value = y * gridPixelLength.value
-
   ctx.value.fillStyle = colorSelected.value;
-  ctx.value.fillRect(cellXStart.value, cellYStart.value, gridPixelLength.value, gridPixelLength.value);
+  ctx.value.fillRect(x, y, gridPixelLength.value, gridPixelLength.value);
   colorHistory.value[`${x}_${y}`] = colorSelected.value
+}
+
+function hexToRgb(hex) {
+  let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+function runFill(startX, startY, currentColor) {
+
+  let color = hexToRgb(currentColor)
+
+  //get imageData
+  let colorLayer = ctx.value.getImageData(
+    0,
+    0,
+    canvas.value.width,
+    canvas.value.height
+  );
+
+  let startPos = (startY * canvas.value.width + startX) * 4;
+
+  //clicked color
+  let startR = colorLayer.data[startPos];
+  let startG = colorLayer.data[startPos + 1];
+  let startB = colorLayer.data[startPos + 2];
+  //exit if color is the same
+  if (
+    color.r === startR &&
+    color.g === startG &&
+    color.b === startB
+  ) {
+    return;
+  }
+  //Start with click coords
+  let pixelStack = [[startX, startY]];
+  let newPos, x, y, pixelPos, reachLeft, reachRight;
+  floodFill();
+  function floodFill() {
+    newPos = pixelStack.pop();
+    x = newPos[0];
+    y = newPos[1];
+
+    //get current pixel position
+    pixelPos = (y * canvas.value.width + x) * 4;
+    // Go up as long as the color matches and are inside the canvas
+    while (y >= 0 && matchStartColor(pixelPos)) {
+      y--;
+      pixelPos -= canvas.value.width * 4;
+    }
+    //Don't overextend
+    pixelPos += canvas.value.width * 4;
+    y++;
+    reachLeft = false;
+    reachRight = false;
+    // Go down as long as the color matches and in inside the canvas
+    while (y < canvas.value.height && matchStartColor(pixelPos)) {
+      colorPixel(pixelPos);
+
+      if (x > 0) {
+        if (matchStartColor(pixelPos - 4)) {
+          if (!reachLeft) {
+            //Add pixel to stack
+            pixelStack.push([x - 1, y]);
+            reachLeft = true;
+          }
+        } else if (reachLeft) {
+          reachLeft = false;
+        }
+      }
+
+      if (x < canvas.value.width - 1) {
+        if (matchStartColor(pixelPos + 4)) {
+          if (!reachRight) {
+            //Add pixel to stack
+            pixelStack.push([x + 1, y]);
+            reachRight = true;
+          }
+        } else if (reachRight) {
+          reachRight = false;
+        }
+      }
+      y++;
+      pixelPos += canvas.value.width * 4;
+    }
+
+    if (pixelStack.length) {
+      floodFill();
+    }
+  }
+
+  //render floodFill result
+  ctx.value.putImageData(colorLayer, 0, 0);
+
+  //helpers
+  function matchStartColor(pixelPos) {
+    let r = colorLayer.data[pixelPos];
+    let g = colorLayer.data[pixelPos + 1];
+    let b = colorLayer.data[pixelPos + 2];
+    return r === startR && g === startG && b === startB;
+  }
+
+  function colorPixel(pixelPos) {
+    colorLayer.data[pixelPos] = color.r;
+    colorLayer.data[pixelPos + 1] = color.g;
+    colorLayer.data[pixelPos + 2] = color.b;
+    colorLayer.data[pixelPos + 3] = 255;
+  }
 }
 
 function clearCanvas() {
@@ -63,14 +186,11 @@ function setGridLines() {
   gridLines.value.style.gridTemplateColumns = `repeat(${gridSize.value}, 1fr)`;
   gridLines.value.style.gridTemplateRows = `repeat(${gridSize.value}, 1fr)`;
 
-  console.log(gridSize.value ** 2);
-
   [...Array(gridSize.value ** 2)].forEach(() =>
     gridLines.value.insertAdjacentHTML(
-      "beforeend", "<div style='border: 1px solid rgba(0, 0, 0, 0.1);'></div>"
+      "beforeend", "<div class='child' style='border: 1px solid rgba(0, 0, 0, 0.1);'></div>"
     )
   );
-
 }
 
 function toggleLines() {
@@ -78,12 +198,12 @@ function toggleLines() {
   gridLines.value.style.display = toggle.value ? null : "none";
 }
 
-// function increaseGridSize() {
-//   gridSize.value = 12
-//   clearCanvas();
-//   setCanvas();
-//   setGridLines();
-// }
+function selectGridSizeButton(size) {
+  gridSize.value = size
+  clearCanvas();
+  setCanvas();
+  setGridLines();
+}
 
 </script>
 
@@ -98,8 +218,8 @@ function toggleLines() {
       ></div>
       <canvas
         ref="canvas"
-        width="600"
-        height="600"
+        width="800"
+        height="800"
         @mousedown="paintOnCanvas"
       />
     </div>
@@ -132,14 +252,16 @@ function toggleLines() {
     <p>
       Ctrl + click to copy a color
     </p>
-    <div>
-      <button @click="increaseGridSize">
-       +
-      </button>
-      <p>
-        Grid size: {{ gridSize }}
-      </p>
-    </div>
+    <button
+      v-for="b in selectGridSize"
+      :key="b"
+      @click="b.click"
+      >
+      {{ b.size }}
+    </button>
+    <button @click="isFillToolSelected = !isFillToolSelected">
+      Fill tool
+    </button>
   </section>
 
 </template>
