@@ -9,17 +9,23 @@ const gridPixelLength = ref(null);
 const gridSize = ref(8);
 const colorSelected = ref('#009578');
 const selectGridSize = ref([]);
+const downloadOptions = ref([]);
 const isFillToolSelected = ref(false);
 
 onMounted(() => {
-  setCanvas()
-  setGridLines()
+  setCanvas();
+  setGridLines();
   selectGridSize.value = [
     {size: 8, click: () => selectGridSizeButton(8)},
     {size: 12, click: () => selectGridSizeButton(12)},
     {size: 16, click: () => selectGridSizeButton(16)},
     {size: 32, click: () => selectGridSizeButton(32)},
-  ]
+  ];
+  downloadOptions.value = [
+    {type: 'jpg', click: () => downloadPixelArt('jpg')},
+    {type: 'png', click: () => downloadPixelArt('png')},
+    {type: 'gif', click: () => downloadPixelArt('gif')},
+  ];
 });
 
 function setCanvas() {
@@ -205,6 +211,14 @@ function selectGridSizeButton(size) {
   setGridLines();
 }
 
+function downloadPixelArt(type) {
+  let anchor = document.createElement("a");
+  anchor.download = "download." + type;
+  anchor.href = canvas.value.toDataURL("pixel-art/" + type);
+  anchor.click();
+  anchor.remove();
+}
+
 </script>
 
 <template>
@@ -252,6 +266,7 @@ function selectGridSizeButton(size) {
     <p>
       Ctrl + click to copy a color
     </p>
+
     <button
       v-for="b in selectGridSize"
       :key="b"
@@ -259,9 +274,19 @@ function selectGridSizeButton(size) {
       >
       {{ b.size }}
     </button>
+
     <button @click="isFillToolSelected = !isFillToolSelected">
       Fill tool
     </button>
+
+    <button
+      v-for="download in downloadOptions"
+      :key="download"
+      @click="download.click"
+      >
+      {{ download.type }}
+    </button>
+
   </section>
 
 </template>
