@@ -36,9 +36,9 @@ function setCanvas() {
   gridPixelLength.value = canvas.value.width / gridSize.value
 }
 
-// PAINT ON CANVAS - ANY CELL
+// PAINT ON CANVAS - CELL:
 function paintOnCanvas(e) {
-
+  // get the cell clicked
   const boundingRect = canvas.value.getBoundingClientRect();
   const x = e.clientX - boundingRect.left;
   const y = e.clientY - boundingRect.top;
@@ -47,6 +47,7 @@ function paintOnCanvas(e) {
   const currentColor = colorHistory.value[`${cellX}_${cellY}`]
 
   if (e.ctrlKey) {
+    // to copy an used color from canavas
     if (currentColor) colorSelected.value = currentColor;
   } else {
     cellXStart.value = cellX * gridPixelLength.value;
@@ -66,12 +67,10 @@ function paintCell(cellX, cellY, startX, startY) {
   colorHistory.value[`${cellX}_${cellY}`] = colorSelected.value
 }
 
-// FLOOD FILL FUNCTIONALITY
+// FLOOD FILL FUNCTIONALITY:
 function useFillTool(startX, startY, currentColor) {
 
   let color = hexToRgb(currentColor)
-
-  //get imageData
   let colorLayer = ctx.value.getImageData(
     0,
     0,
@@ -81,11 +80,11 @@ function useFillTool(startX, startY, currentColor) {
 
   let startPos = (startY * canvas.value.width + startX) * 4;
 
-  //clicked color
+  // clicked color
   let startR = colorLayer.data[startPos];
   let startG = colorLayer.data[startPos + 1];
   let startB = colorLayer.data[startPos + 2];
-  //exit if color is the same
+  // exit if color is the same
   if (
     color.r === startR &&
     color.g === startG &&
@@ -93,7 +92,7 @@ function useFillTool(startX, startY, currentColor) {
   ) {
     return;
   }
-  //Start with click coords
+  // start with click coords
   let pixelStack = [[startX, startY]];
   let newPos, x, y, pixelPos, reachLeft, reachRight;
   floodFill();
@@ -102,19 +101,19 @@ function useFillTool(startX, startY, currentColor) {
     x = newPos[0];
     y = newPos[1];
 
-    //get current pixel position
+    // get current pixel position
     pixelPos = (y * canvas.value.width + x) * 4;
-    // Go up as long as the color matches and are inside the canvas
+    // go up as long as the color matches and are inside the canvas
     while (y >= 0 && matchStartColor(pixelPos)) {
       y--;
       pixelPos -= canvas.value.width * 4;
     }
-    //Don't overextend
+    // don't overextend
     pixelPos += canvas.value.width * 4;
     y++;
     reachLeft = false;
     reachRight = false;
-    // Go down as long as the color matches and in inside the canvas
+    // go down as long as the color matches and in inside the canvas
     while (y < canvas.value.height && matchStartColor(pixelPos)) {
       colorPixel(pixelPos);
 
@@ -133,7 +132,7 @@ function useFillTool(startX, startY, currentColor) {
       if (x < canvas.value.width - 1) {
         if (matchStartColor(pixelPos + 4)) {
           if (!reachRight) {
-            //Add pixel to stack
+            // add pixel to stack
             pixelStack.push([x + 1, y]);
             reachRight = true;
           }
@@ -150,10 +149,9 @@ function useFillTool(startX, startY, currentColor) {
     }
   }
 
-  //render floodFill result
+  // render floodFill
   ctx.value.putImageData(colorLayer, 0, 0);
 
-  //helpers
   function matchStartColor(pixelPos) {
     let r = colorLayer.data[pixelPos];
     let g = colorLayer.data[pixelPos + 1];
@@ -168,6 +166,7 @@ function useFillTool(startX, startY, currentColor) {
     colorLayer.data[pixelPos + 3] = 255;
   }
 }
+// convert hex color to rgb
 function hexToRgb(hex) {
   let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
@@ -177,13 +176,13 @@ function hexToRgb(hex) {
   } : null;
 }
 
-// CLEAR WHOLE CANVAS
+// CLEAR CANVAS:
 function clearCanvas() {
   ctx.value.fillStyle = 'transparent';
   ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
 }
 
-// GRID LINES
+// HANDLING GRID LINES:
 const squaresLines = ref([])
 function setGridLines() {
   gridLines.value.style.width = `${canvas.value.width}px`;
@@ -218,7 +217,7 @@ function downloadPixelArt(type) {
 
 <template>
   <body>      
-    <!-- configurations/options -->
+    <!-- configurations/options section -->
     <section class="configurations-wrapper hide-on-small-screens">
 
       <h1 :style="{color: colorSelected}">
@@ -336,7 +335,7 @@ function downloadPixelArt(type) {
       </div>
     </section>
 
-    <!-- canvas -->
+    <!-- canvas section -->
     <section class="hide-on-small-screens">
       <div ref="gridLines" id="gridLines">
         <div 
@@ -458,7 +457,6 @@ hr {
   letter-spacing: 1px;
   outline: 0;
   border: 1.2px solid rgb(18, 18, 18);
-  cursor: pointer;
   position: relative;
   background-color: rgba(0, 0, 0, 0);
   user-select: none;
@@ -596,6 +594,5 @@ hr {
     display: unset;
   }
 }
-
 </style>
 
