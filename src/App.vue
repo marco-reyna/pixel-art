@@ -27,7 +27,7 @@ import PixelArt from './views/PixelArt.vue'
 #app {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding-top: 2rem;
 }
 
 </style>

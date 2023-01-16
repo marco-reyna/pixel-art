@@ -31,7 +31,7 @@ onMounted(() => {
 });
 function setCanvas() {
   ctx.value = canvas.value.getContext('2d');
-  ctx.value.fillStyle = '#ffffff';
+  ctx.value.fillStyle = 'transparent';
   ctx.value.fillRect(0, 0, canvas.value.width, canvas.value.height);
   gridPixelLength.value = canvas.value.width / gridSize.value
 }
@@ -179,8 +179,8 @@ function hexToRgb(hex) {
 
 // CLEAR WHOLE CANVAS
 function clearCanvas() {
-  ctx.value.fillStyle = '#ffffff';
-  ctx.value.fillRect(0, 0, canvas.value.width, canvas.value.height);
+  ctx.value.fillStyle = 'transparent';
+  ctx.value.clearRect(0, 0, canvas.value.width, canvas.value.height);
 }
 
 // GRID LINES
@@ -219,7 +219,7 @@ function downloadPixelArt(type) {
 <template>
   <body>      
     <!-- configurations/options -->
-    <section class="configurations-wrapper">
+    <section class="configurations-wrapper hide-on-small-screens">
 
       <h1 :style="{color: colorSelected}">
         Pixel Art App
@@ -232,9 +232,18 @@ function downloadPixelArt(type) {
         type="color"
       >
 
-      <div class="copy-color">
+      <div class="select-color">
         <p>
-          Ctrl+click to copy a color from canvas
+          Click above
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
+              <path d="M214.6 41.4c-12.5-12.5-32.8-12.5-45.3 0l-160 160c-12.5
+              12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L160 141.2V448c0 17.7 14.3
+              32 32 32s32-14.3 32-32V141.2L329.4 246.6c12.5 12.5 32.8 12.5 45.3
+              0s12.5-32.8 0-45.3l-160-160z"/>
+            </svg>
+          </span>
+          to chose a color from the palette
         </p>
       </div>
 
@@ -280,6 +289,14 @@ function downloadPixelArt(type) {
         </button>
       </div>
 
+      <div class="copy-color">
+        <p>
+          Press
+          <span class="yellow-text">Ctrl+Click</span>
+          to copy a color from the canvas
+        </p>
+      </div>
+
       <hr/>
 
       <h2>Select grid size:</h2>
@@ -289,6 +306,9 @@ function downloadPixelArt(type) {
           :key="b"
           @click="b.click"
           class="small-buttons"
+          :style="gridSize === b.size ?
+          'background-color: #ffe54c; color: #242424; border-color: #242424;'
+          : ''"
           >
           {{ b.size }}
         </button>
@@ -317,16 +337,23 @@ function downloadPixelArt(type) {
     </section>
 
     <!-- canvas -->
-    <section>
+    <section class="hide-on-small-screens">
       <div ref="gridLines" id="gridLines">
         <div 
-          style="border: 1px solid rgba(0, 0, 0, 0.1);"
+          style="border: 0.5px solid rgba(255,255,255,0.2)"
           v-for="square in squaresLines"
           :key="square"
         ></div>
       </div>
       <canvas ref="canvas" width="800" height="800" @mousedown="paintOnCanvas" />
     </section>
+
+    <!-- small screens message-->
+    <section class="coming-soon-message">
+      <img src="../assets/pizza.png" alt="image of a pizza's slice">
+      <h3>App in smaller screens <span class="yellow-text">coming soon</span></h3>
+    </section>    
+
   </body>
 </template>
 
@@ -341,12 +368,12 @@ function downloadPixelArt(type) {
 body {
   display: flex;
   gap: 50px;
-  padding: 30px 0;
 }
 
 canvas {
   cursor: pointer;
   border-radius: 2px;
+  padding: 0;
 }
 
 h1 {
@@ -354,21 +381,31 @@ h1 {
   line-height: 40px;
   font-weight: 700;
   text-transform: uppercase;
-  /* text-shadow: 2px 0 #fff, -2px 0 #fff, 0 2px #fff, 0 -2px #fff,
-  1px 1px #fff, -1px -1px #fff, 1px -1px #fff, -1px 1px #fff; */
   margin-bottom: -12px;
-  letter-spacing: 3.8px;
+  letter-spacing: 5px;
   text-align: center;
+}
+
+h2 {
+  color: #ffffff;
+}
+
+h3 {
+  color: #ffffff;
 }
 
 button {
   cursor: pointer;
 }
 
+p {
+  color: #ffffff;
+}
+
 hr {
   border: 2px dashed #FFF;
   width: 100%;
-  margin-bottom: 30px;
+  margin-bottom: 35px;
 }
 
 .configurations-wrapper {
@@ -448,9 +485,26 @@ hr {
 }
 
 .copy-color {
-  text-align: center;
-  font-size: 20px;
-  padding: 10px 0;
+  font-size: 18px;
+  padding: 0px 0 10px 0;
+}
+
+.yellow-text {
+  color: #ffe54c;
+  font-weight: 500;
+}
+
+.select-color {
+  width: 100%;
+  display: flex;
+  font-size: 17.5px;
+  justify-content: space-between;
+}
+
+.select-color span svg {
+  fill: #ffe54c;
+  width: 18px;
+  padding: 0 3px 0 3px;
 }
 
 .grid-size-buttons-wrapper {
@@ -496,7 +550,7 @@ hr {
   grid-template-columns: repeat(3, 1fr);
   grid-gap: 20px;
   grid-auto-rows: minmax(20px, auto);
-  padding: 10px 0 60px 0;
+  padding: 10px 0 40px 0;
 }
 
 .button-clear-canvas {
@@ -519,6 +573,28 @@ hr {
   box-shadow: 0px 0px 0px 0px;
   top: 5px;
   left: 5px;
+}
+
+.coming-soon-message {
+  display: none;
+  max-width: 50%;
+  max-height: 50%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.coming-soon-message img {
+  width: 100%;
+}
+
+@media (max-width: 1200px) {
+  .hide-on-small-screens {
+    display: none;
+  }
+
+  .coming-soon-message {
+    display: unset;
+  }
 }
 
 </style>
