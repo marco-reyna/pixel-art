@@ -350,7 +350,7 @@ function downloadPixelArt(type) {
     <!-- small screens message-->
     <section class="coming-soon-message">
       <img src="../assets/pizza.png" alt="image of a pizza's slice">
-      <h3>App in smaller screens <span class="yellow-text">coming soon</span></h3>
+      <h3>App for small screens <span class="yellow-text">coming soon</span></h3>
     </section>    
 
   </body>
